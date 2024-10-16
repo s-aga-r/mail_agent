@@ -48,7 +48,7 @@ class Haraka:
         for file_key, file_path in self.config_files.items():
             create_file(self.get_file_path(file_key))
 
-        if config["agent_type"] == "outbound":
+        if config["agent_type"] in ["outbound", "inbound and outbound"]:
             update_ini_config(
                 self.get_file_path("outbound.ini"),
                 "main",

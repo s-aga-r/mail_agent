@@ -36,19 +36,35 @@ def cli() -> None:
     help="Setup the Mail Agent as an Inbound server.",
     default=False,
 )
-def setup(prod: bool = False, inbound: bool = False) -> None:
+@click.option(
+    "--outbound",
+    is_flag=True,
+    help="Setup the Mail Agent as an Outbound server.",
+    default=False,
+)
+def setup(prod: bool = False, inbound: bool = False, outbound: bool = False) -> None:
     """Setup the Mail Agent by reading the configuration from the config.json file."""
 
     if prod and not (platform.system() == "Linux" and distro.id() == "ubuntu"):
         click.echo("❌ [ERROR] Production setup is only supported on Ubuntu Linux.")
         return
 
+    agent_type = ""
+    if inbound and outbound:
+        agent_type = "inbound and outbound"
+    elif inbound:
+        agent_type = "inbound"
+    elif outbound:
+        agent_type = "outbound"
+    else:
+        click.echo("❌ [ERROR] Please specify either --inbound or --outbound.")
+        return
+
     click.echo("🛠️ [INFO] Initiating Mail Agent setup...")
-    agent_type = "inbound" if inbound else "outbound"
+
     me = ask_for_input(
         "Hostname", execute_command("hostname -f")[1].strip(), required=True
     )
-
     env_vars = {
         "AGENT_ID": ask_for_input("Agent ID", me),
         "AGENT_TYPE": agent_type,
@@ -72,11 +88,11 @@ def setup(prod: bool = False, inbound: bool = False) -> None:
         ),
     }
 
-    if agent_type == "inbound":
+    if agent_type in ["inbound", "inbound and outbound"]:
         env_vars["FRAPPE_BLACKLIST_HOST"] = ask_for_input(
             "Frappe Blacklist Host", "https://frappemail.com"
         )
-    else:
+    if agent_type in ["outbound", "inbound and outbound"]:
         env_vars["MAX_EMAILS_PER_SECOND_PER_WORKER"] = ask_for_input(
             "Max Emails Per Second Per Worker", 0.5
         )
@@ -124,7 +140,7 @@ def setup_for_production(config: dict) -> None:
     generate_procfile(config, for_production=True)
     create_haraka_service()
 
-    if config["haraka"]["agent_type"] == "outbound":
+    if config["haraka"]["agent_type"] in ["outbound", "inbound and outbound"]:
         create_mail_agent_service()
 
     click.echo("✅ [SUCCESS] Production setup complete!")
@@ -261,7 +277,7 @@ def generate_procfile(config: dict, for_production: bool = False) -> None:
 
     haraka_config = config["haraka"]
     consumers_config = config["consumers"]
-    if haraka_config["agent_type"] == "outbound":
+    if haraka_config["agent_type"] in ["outbound", "inbound and outbound"]:
         depends_on_service = (
             f'./wait.sh "Haraka" {haraka_config["port"]} {haraka_config["host"]}'
         )

@@ -19,6 +19,14 @@
                 "haraka-plugin-auth-enc-file",
                 "headers",
                 "outbound_hooks"
+            ],
+            "inbound and outbound": [
+                "tls",
+                "headers",
+                "mailauth",
+                "inbound_hooks",
+                "outbound_hooks",
+                "haraka-plugin-auth-enc-file"
             ]
         }
     },
