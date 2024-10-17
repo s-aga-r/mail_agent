@@ -32,14 +32,18 @@ exports.register = async function () {
 };
 
 exports.hook_rcpt = function (next, connection, params) {
-    this.loginfo("Recipient accepted: Catch-All");
-    return next(OK);
+    if (!connection.relaying) {
+        this.loginfo("Recipient accepted: Catch-All");
+        return next(OK);
+    }
+
+    next();
 };
 
 exports.hook_queue = function (next, connection, params) {
     if (connection.relaying) {
         this.loginfo("Skipping queueing for relaying (outbound) connection.");
-        return next();
+        return next(DENY);
     }
 
     const transaction = connection.transaction;

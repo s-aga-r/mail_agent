@@ -28,7 +28,7 @@ exports.register = async function () {
 
 exports.hook_queue_ok = async function (next, connection) {
     if (!connection.relaying) {
-        return next(); // Skip for inbound
+        return next(DENY);
     }
 
     try {
